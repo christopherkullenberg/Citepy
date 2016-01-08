@@ -1,0 +1,81 @@
+/*
+vit = #F4FAFF
+ljusgrå = #DEE7E7
+lila = #B7ADCF
+rosa = #D5C5C8
+mörkgrön = #4F646F
+mökgrå = #535657
+ljusgrön = #B9D8C2
+
+*/
+h1 {
+  text-align: left;
+  font-size: 16px;
+}
+
+/* unvisited link */
+a:link {
+    color: #535657;
+}
+
+/* visited link */
+a:visited {
+    color: #535657;
+}
+
+/* mouse over link */
+a:hover {
+    color: #D5C5C8;
+}
+
+/* selected link */
+a:active {
+    color: red;
+}
+
+th {
+    font-size: 14px;
+    text-decoration: underline;
+    background: #D5C5C8;
+}
+
+th:hover {
+    color: #F4FAFF;
+    text-decoration: underline;
+}
+
+
+td {
+    display: table-cell;
+    vertical-align: inherit;
+    font-size: 12px;
+}
+
+tr:nth-child(even) {background: #DEE7E7}
+tr:nth-child(odd) {background: #F4FAFF}
+
+tr {
+    text-align: left;
+    font-size: 12px;
+}
+tr:hover {
+    background-color: #4F646F;
+    color: #F4FAFF;
+}
+
+.btn {
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  font-family: Arial;
+  color: black;
+  font-size: 10px;
+  background: LightGoldenRodYellow;
+  padding: 3px 3px 4px 2px;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: Peru;
+  text-decoration: none;
+}
