@@ -1,11 +1,11 @@
 """
-Use with Python 3.4
+Tested with Python 3.4
 
 This program uses Tsorter by Terrill Dent, licensed under the MIT licence: http://terrill.ca/sorting/tsorter/LICENSE
 
-Requires also lxml
-
 This is a very early draft of a program. Use more as food for though rather than as a production tool.
+
+Please excuse the lengthy code. I am only a beginner programmer :)
 """
 import pandas as pd
 from bokeh.plotting import figure, output_file, save
@@ -21,6 +21,12 @@ import numpy as np
 #import image
 
 script, filename = argv
+
+"""
+This script makes use of a number of dictionaries and lists
+for creating the html output files. The counter variables
+are mostly used as control data.
+"""
 
 plotyears = []
 cr = []
@@ -46,9 +52,9 @@ indexbodydict= {}
 citrefdictionary = {}
 citationnetworkdict = {}
 
+#This begins the creation of a graph
 gexf = Gexf("Keyword Co-occurrence Network", "File:" + filename + ".")
 graph = gexf.addGraph("directed", "static", "Web of Science Keyword network")
-
 
 
 # Open up the Web of Science source data as a tsv file.
@@ -56,7 +62,11 @@ with open(filename,'r') as tsv: # change file-name here
     next(tsv) # This skips the first line in the file, which contains the TSV headers
     WoSdata = [line.strip().split('\t') for line in tsv] #reads everything as a list
 
-# This loop parses, redefines and writes the values selecte to 'index.html'
+"""
+This loop parses, redefines and writes the values selecte to 'index.html'
+However, it also contains surplus variables for future uses, following the
+non-existent documentation of the ISI format. Use however you feel like.
+"""
 for W in WoSdata:
     PT = W[0] #Publication Type
     AU = W[1] # Authors
@@ -120,7 +130,7 @@ for W in WoSdata:
     GA = W[59] # IDS number, ISI original
     UT = W[60] # WOS ISI unique artile identifier
 
-    #Count records
+    #Count records, for debugging
     if PT:
         records += 1
     else:
@@ -129,30 +139,24 @@ for W in WoSdata:
     for category in WC.split('; '):
         wclist.append(category)
 
-
-
     #Append the content of the table
     #Problem: This writes too many records! Limit to 500 or something
+    #This is used for the index.html list. See below for sorting.
     indexbodydict.update({'<tr>\n<td>' + AU + '<br><a href="http://dx.doi.org/'
     + DI + '" target="_blank"><div title="' + AB + '">' + TI + '</div>\n</a></td>'
     + '\n<td>' + SO + '</td>\n <td>' + str(PY) + '</td><td>'
     + str(TC) + '</td>\n</tr>\n': TC})
 
-    """ Old function to add everything to index file. Too memory heavy.
-    indexbody.append('<tr>\n<td>' + AU + '<br><a href="http://dx.doi.org/'
-    + DI + '" target="_blank"><div title="' + AB + '">' + TI + '</div>\n</a></td>'
-    + '\n<td>' + SO + '</td>\n <td>' + str(PY) + '</td><td>'
-    + str(TC) + '</td>\n</tr>\n')
-    """
-
     #Create list of years
     plotyears.append(PY)
+    #and a list of journals
     journals.append(SO)
-
+    #and a list of keywords (splitted with semicolons)
     keywordset.append(DE.split('; '))
-    #Loop and split cited references
 
+    #Loop and split cited references
     citationnetworkdict.update({AU: CR.split('; ')})
+
     for citref in CR.split('; '):
         #citrefdictionary.update({citref: UT}) # This creates a dictionary for each CR so that UT can be extracted.
         cr.append(citref)
@@ -166,37 +170,41 @@ for W in WoSdata:
         else:
             keywords.append(keyw.lower())
             graph.addNode(keyw.lower(), keyw.lower())
-#print(citrefdictionary)
 
 
-#print(wclist)
-
+"""
+Below the body data of the static pages are created. Increase the values
+after 'most_common' to include more data. But keep in mind that this will
+slow down the browser.
+"""
+#Create author list
 authorcount = collections.Counter(authors)
 for a in authorcount: #count unique authors, not duplicates
     authorcounter += 1
 for author, count in authorcount.most_common(500):
     authorbody.append("<tr>\n<td>" + author + "</td>\n<td>" + str(count) + "</td>\n</tr>\n")
 
+#Create journal list
 journalcount = collections.Counter(journals)
 for j in journalcount:
     journalcounter +=1
 for journal, count in journalcount.most_common(500):
     journalbody.append("<tr>\n<td>" + journal + "</td>\n<td>" + str(count) + "</td>\n</tr>\n")
 
+#create keyword list
 keywordcount = collections.Counter(keywords)
 for k in keywordcount:
     keywordcounter +=1
 for keyword, count in keywordcount.most_common(1000):
     keywordbody.append("<tr>\n<td>" + keyword + "</td>\n<td>" + str(count) + "</td>\n</tr>\n")
 
+#this is just for printing the wc categories
 wclistcount = collections.Counter(wclist)
 for wc, count in wclistcount.most_common(20):
     print(wc + "\t" + str(count))
 
 ### Create edges for a keyword cooccurrence network:
-
 edgelist = []
-
 for k in keywordset:
     cooccurrence = list(combinations(k, 2))
     for c in cooccurrence:
@@ -208,9 +216,8 @@ for enumer, edge in enumerate(edgelist):
 
 gexf_file = open(filename + "Keywords.gexf", "wb")
 gexf.write(gexf_file)
-###
 
-#### Create graphviz (experimental)
+#### Create graphviz (experimental) Not used right now
 """
 from graphviz import Digraph
 
@@ -249,12 +256,6 @@ for key, value in citationnetworkdict.items():
 
 gexf_file = open(filename + "Citations.gexf", "wb")
 gexf.write(gexf_file)
-    #print("***" + key, value) for v in value
-    #for enumer, v in value:
-    #    print(enumer, v)
-
-
-
 
 ### Create graph with Bokeh
 counter = collections.Counter(plotyears) #count them
@@ -287,11 +288,12 @@ p.line(x=data['yearDate'],y=data['value'], color="#B7ADCF", line_width=2)
 bokehhtml = file_html(p, CDN, "Yearly Distribution of Records")
 save(p)
 
-#htmlfile.write(html)
 ### /Create graph with Bokeh.
 
+
+
 """
-#Create wordcloud of keywords
+#Create wordcloud of keywords. Not used in the current version. Just a suggestion.
 # Stopwords, just add more if needed.
 stopwords = STOPWORDS
 stopwords.add("et")
@@ -429,16 +431,22 @@ authorfile.write(header + authorbodytop)
 journalfile.write(header + journalbodytop)
 keywordfile.write(header + keywordbodytop)
 
-#Write the content of the main table
-#Note, arranged by most cited with the 'most_common' variable
+"""
+Write the content of the main table
+Note, arranged by most cited with the 'most_common' variable
+Change to increase/decrease the value.
+This should be rewritten in a future version
+"""
 for record in dict(collections.Counter(indexbodydict).most_common(500)):
     htmlfile.write(record)
 
-""" This one used to print everything as index. Makes computer run out of memory.
-for i in indexbody:
-    htmlfile.write(i)
+""" This one used to print everything as index (without the limitation above).
+Makes computer run out of memory when using large data sets.
 """
+#for i in indexbody:
+#    htmlfile.write(i)
 
+#Write html code to file
 for a in authorbody:
     authorfile.write(a)
 
@@ -449,7 +457,7 @@ for k in keywordbody:
     keywordfile.write(k)
 
 
-# Create Cited referece (cr.html) table content.
+# Create Cited referece (cr.html) table content. This a bit complicated.
 crcount = collections.Counter(cr) #Count them
 for citedreference, count in crcount.most_common(500):
     crfile.write("<tr>\n")
@@ -508,7 +516,7 @@ footer = """
 </body>
 </html>
 """
-#Write and save m files
+#Write and save files
 htmlfile.write(footer)
 htmlfile.close()
 crfile.write(footer)
@@ -521,9 +529,8 @@ keywordfile.write(footer)
 keywordfile.close()
 
 
-
-### Boot up web server and open in browser
-import webbrowser
+### Boot up web server
+#import webbrowser
 #webbrowser.open('http://localhost:8000/index.html')
 import http.server
 import socketserver
