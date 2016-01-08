@@ -13,7 +13,8 @@ Features include:
 * Export word co-occurrence networks and co-author networks as .gexf files for further analysis in [Gephi](http://gephi.org).
 * Easy-to-share output (a few static html files).
 
-![Cite.py](screenshot.png)
+
+<img src="screenshot.png" width="500"/>
 
 ### Requirements
 This program is written in Python 3. The following external packages are required:
@@ -44,6 +45,7 @@ The script will create a handful of html files and gexf network files.
 
 ## Todo / Future updates
 
-* Enable larger data sets (se above)
-* Add more useful functionality
-* ??? (please send me a message to suggest further improvements)
+* Enable larger data sets (se above).
+* Enable more input files, such as Scopus, SwePub etc.
+* Add more useful functionality.
+* ??? (please send me a message to suggest further improvements).
