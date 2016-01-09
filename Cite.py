@@ -1,11 +1,11 @@
 """
 Tested with Python 3.4
+This program uses Tsorter by Terrill Dent, licensed under the MIT licence:
+http://terrill.ca/sorting/tsorter/LICENSE
 
-This program uses Tsorter by Terrill Dent, licensed under the MIT licence: http://terrill.ca/sorting/tsorter/LICENSE
-
-This is a very early draft of a program. Use more as food for though rather than as a production tool.
-
-Please excuse the lengthy code. I am only a beginner programmer :)
+This is a very early draft of a program. Use more as food for though rather than
+as a production tool. Please excuse the lengthy code. I am only a beginner
+programmer :)
 """
 import pandas as pd
 from bokeh.plotting import figure, output_file, save
@@ -16,16 +16,17 @@ from sys import argv
 from gexf import *
 from itertools import combinations
 import numpy as np
-#import matplotlib.pyplot as plt
-#from wordcloud import WordCloud, STOPWORDS
-#import image
+# import matplotlib.pyplot as plt # Not used right now
+# from wordcloud import WordCloud, STOPWORDS # Not used right now
+# import image # Not used right now.
 
+# Takes filename from command prompt as input
 script, filename = argv
 
 """
 This script makes use of a number of dictionaries and lists
 for creating the html output files. The counter variables
-are mostly used as control data.
+are mostly used as control data but also in the html file.
 """
 
 plotyears = []
@@ -41,7 +42,7 @@ authorcounter = 0
 journalcounter = 0
 keywordcounter = 0
 
-#indexbody = [] Used to write everything to the index file. Memory overload.
+#indexbody = [] Use to write everything to index. Memory overload, see below
 authorbody = []
 journalbody = []
 keywordbody = []
@@ -49,18 +50,17 @@ keywordbody = []
 wclist = []
 
 indexbodydict= {}
-citrefdictionary = {}
 citationnetworkdict = {}
-
-#This begins the creation of a graph
-gexf = Gexf("Keyword Co-occurrence Network", "File:" + filename + ".")
-graph = gexf.addGraph("directed", "static", "Web of Science Keyword network")
-
 
 # Open up the Web of Science source data as a tsv file.
 with open(filename,'r') as tsv: # change file-name here
-    next(tsv) # This skips the first line in the file, which contains the TSV headers
-    WoSdata = [line.strip().split('\t') for line in tsv] #reads everything as a list
+    next(tsv) #Skips the first line in the file, containing the TSV headers
+    WoSdata = [line.strip().split('\t') for line in tsv] #everything as a list
+
+# This begins the creation of a .gexf graph for keyword co-occurrence analysis.
+# It comes already here because nodes are added in the loop below.
+gexf = Gexf("Keyword Co-occurrence Network", "File:" + filename + ".")
+graph = gexf.addGraph("directed", "static", "Web of Science Keyword network")
 
 """
 This loop parses, redefines and writes the values selecte to 'index.html'
@@ -68,7 +68,7 @@ However, it also contains surplus variables for future uses, following the
 non-existent documentation of the ISI format. Use however you feel like.
 """
 for W in WoSdata:
-    PT = W[0] #Publication Type
+    PT = W[0] # Publication Type
     AU = W[1] # Authors
     BA = W[2] # ?
     BE = W[3] # Editors of Proceedings
@@ -78,7 +78,7 @@ for W in WoSdata:
     CA = W[7] # Group Authors
     TI = W[8] # Title
     SO = W[9] # Source (Journal title, full)
-    SE = W[10] #Book Series title
+    SE = W[10] # Book Series title
     BS = W[11] # ?
     LA = W[12] # Language
     DT = W[13] # Document Type
@@ -113,7 +113,7 @@ for W in WoSdata:
     JI = W[42] # ISO Journal Title Abbreviation
     PD = W[43] # Publication date (mixed string and possible integer value)
     PY = int(W[44]) # Publication Year (Could also be parsed with date module)
-    VL = W[45] # Volume (could also be parsed as an integer, but no really useful)
+    VL = W[45] # Volume (could also be parsed as integer, but not really useful)
     IS = W[46] # Issue (contains both numerical values and hyphenations)
     PN = W[47] # Part Number
     SU = W[48] # Supplement (number)
@@ -130,46 +130,55 @@ for W in WoSdata:
     GA = W[59] # IDS number, ISI original
     UT = W[60] # WOS ISI unique artile identifier
 
-    #Count records, for debugging
+    # Count records, good for verification of your original data.
     if PT:
         records += 1
     else:
         continue
 
+    # This appends out the Web of Science categories to list.
     for category in WC.split('; '):
         wclist.append(category)
 
-    #Append the content of the table
-    #Problem: This writes too many records! Limit to 500 or something
-    #This is used for the index.html list. See below for sorting.
+    """
+    Now, this adds the content of the index.html by creating a dictionary
+    with the Author, Title, Journal and Year as keys and the Times Cited
+    as values. In a later stage, this dictionary will be limited to 500
+    records sorted by Times Cited to prevent creating browser hangups.
+    """
     indexbodydict.update({'<tr>\n<td>' + AU + '<br><a href="http://dx.doi.org/'
-    + DI + '" target="_blank"><div title="' + AB + '">' + TI + '</div>\n</a></td>'
-    + '\n<td>' + SO + '</td>\n <td>' + str(PY) + '</td><td>'
+    + DI + '" target="_blank"><div title="' + AB + '">' + TI +
+    '</div>\n</a></td>' + '\n<td>' + SO + '</td>\n <td>' + str(PY) + '</td><td>'
     + str(TC) + '</td>\n</tr>\n': TC})
 
-    #Create list of years
+    # Create list of years
     plotyears.append(PY)
-    #and a list of journals
+
+    # and a list of journals
     journals.append(SO)
-    #and a list of keywords (splitted with semicolons)
+
+    # and a list of keywords (splitted with semicolons)
     keywordset.append(DE.split('; '))
 
-    #Loop and split cited references
+    # This dictionary is later used to create a citation network file.
     citationnetworkdict.update({AU: CR.split('; ')})
 
+    # This loop splits and adds cited refereces to create cr.html page
     for citref in CR.split('; '):
-        #citrefdictionary.update({citref: UT}) # This creates a dictionary for each CR so that UT can be extracted.
         cr.append(citref)
         citrefcounter += 1
+
+    # This loop splits and adds authors for the authors.html page
     for au in AU.split('; '):
         authors.append(au)
 
+    # This loop splits and adds keywords to the keywords.html page
     for keyw in DE.split('; '):
-        if len(keyw) < 1:  #remove empty ones
+        if len(keyw) < 1:  # removes empty keywords
             continue
         else:
-            keywords.append(keyw.lower())
-            graph.addNode(keyw.lower(), keyw.lower())
+            keywords.append(keyw.lower()) # make everything lower case
+            graph.addNode(keyw.lower(), keyw.lower()) # add nodes to graph
 
 
 """
@@ -177,33 +186,37 @@ Below the body data of the static pages are created. Increase the values
 after 'most_common' to include more data. But keep in mind that this will
 slow down the browser.
 """
-#Create author list
+# Create author list
 authorcount = collections.Counter(authors)
-for a in authorcount: #count unique authors, not duplicates
+for a in authorcount: # count unique authors, not duplicates
     authorcounter += 1
 for author, count in authorcount.most_common(500):
-    authorbody.append("<tr>\n<td>" + author + "</td>\n<td>" + str(count) + "</td>\n</tr>\n")
+    authorbody.append("<tr>\n<td>" + author + "</td>\n<td>"
+                      + str(count) + "</td>\n</tr>\n")
 
-#Create journal list
+# Create journal list
 journalcount = collections.Counter(journals)
 for j in journalcount:
     journalcounter +=1
 for journal, count in journalcount.most_common(500):
-    journalbody.append("<tr>\n<td>" + journal + "</td>\n<td>" + str(count) + "</td>\n</tr>\n")
+    journalbody.append("<tr>\n<td>" + journal + "</td>\n<td>"
+                       + str(count) + "</td>\n</tr>\n")
 
-#create keyword list
+# Create keyword list
 keywordcount = collections.Counter(keywords)
 for k in keywordcount:
     keywordcounter +=1
 for keyword, count in keywordcount.most_common(1000):
-    keywordbody.append("<tr>\n<td>" + keyword + "</td>\n<td>" + str(count) + "</td>\n</tr>\n")
+    keywordbody.append("<tr>\n<td>" + keyword + "</td>\n<td>"
+                       + str(count) + "</td>\n</tr>\n")
 
-#this is just for printing the wc categories
+# This is just for printing the top 20 wc categories to the terminal.
+# !!! Make a proper page out of this in future version
 wclistcount = collections.Counter(wclist)
 for wc, count in wclistcount.most_common(20):
     print(wc + "\t" + str(count))
 
-### Create edges for a keyword cooccurrence network:
+# Create edges for a keyword cooccurrence network as defined alredy on line 60.
 edgelist = []
 for k in keywordset:
     cooccurrence = list(combinations(k, 2))
@@ -211,14 +224,15 @@ for k in keywordset:
         edgelist.append(c)
 
 for enumer, edge in enumerate(edgelist):
-    #print(enumer, edge[0].lower(), edge[1].lower())
+    # print(enumer, edge[0].lower(), edge[1].lower())
     graph.addEdge(enumer, edge[0].lower(), edge[1].lower())
 
+# Write file
 gexf_file = open(filename + "Keywords.gexf", "wb")
 gexf.write(gexf_file)
 
-#### Create graphviz (experimental) Not used right now
 """
+# Create graphviz visualization (experimental) Not used right now
 from graphviz import Digraph
 
 u = Digraph('unix', filename='testargraphviz.gv')
@@ -240,7 +254,7 @@ for edge, value in edgetoplist.most_common(100):
 u.view()
 """
 
-### Create nodes and edges for Citation network.
+# Create nodes and edges for Citation network.
 gexf = Gexf("Citation Network", "File:" + filename + ".")
 graph = gexf.addGraph("directed", "static", "Web of Science Citation network")
 
@@ -254,10 +268,11 @@ for key, value in citationnetworkdict.items():
         graph.addEdge(str(numberofedges), key, v)
         numberofedges += 1
 
+# Write file
 gexf_file = open(filename + "Citations.gexf", "wb")
 gexf.write(gexf_file)
 
-### Create graph with Bokeh
+# Create the header graph with Bokeh
 counter = collections.Counter(plotyears) #count them
 output_file("years.html", title="Citepy - Yearly distribution of records")
 
@@ -273,34 +288,32 @@ for number in sorted(counter): #This puts years and values
 
 for key, value in yearvaldict.items():
     print(key, value)
-# Convert your data into a panda DataFrame format
+
+# Convert data into a panda DataFrame format
 data=pd.DataFrame({'year':years, 'value':val})
 
-# Create a new column (yearDate) equal to the year Column but with a datetime format
+# Create new column (yearDate) equal to the year Column but with datetime format
 data['yearDate']=pd.to_datetime(data['year'],format='%Y')
 
-# Create a line graph with datetime x axis and use datetime column(yearDate) for this axis
-p = figure(width=600, height=150, x_axis_type="datetime") #, tools="reset, save, pan, wheel_zoom")
+# Create a line graph with datetime x axis and use datetime column(yearDate)
+# for this axis
+p = figure(width=600, height=150, x_axis_type="datetime")
 p.logo = None
 p.toolbar_location = None #"right"
 p.line(x=data['yearDate'],y=data['value'], color="#B7ADCF", line_width=2)
-#show(p)
+#show(p) # for debugging
 bokehhtml = file_html(p, CDN, "Yearly Distribution of Records")
 save(p)
 
-### /Create graph with Bokeh.
-
-
 
 """
-#Create wordcloud of keywords. Not used in the current version. Just a suggestion.
+#Create wordcloud of keywords. Not used in the current version. Just a suggest.
 # Stopwords, just add more if needed.
 stopwords = STOPWORDS
 stopwords.add("et")
 stopwords.add("will")
 stopwords.add("al")
 stopwords.add("also")
-
 
 # Generating wordcloud (change size)
 wordcloud = WordCloud(
@@ -318,18 +331,20 @@ plt.axis("off")
 print('Saving Wordcloud as: ' + filename + '.png')
 plt.savefig(filename + '.png') # change to .svg, .pdf etc. for other outputs.
 ##plt.show()
-
 """
 
 
-################ BEGIN HTML RENDERING ###################################
-### This defines the header, opens 'index.html' and writes the header.
+"""
+Below begins the html rendering to files.
+"""
+# Open the files.
 htmlfile = open('index.html','w')
 crfile = open('cr.html','w')
 authorfile = open('authors.html','w')
 journalfile = open('journals.html', 'w')
 keywordfile = open('keywords.html', 'w')
 
+# This header is shared for all pages.
 header = '''
 <!DOCTYPE html>
 <html>
@@ -344,24 +359,23 @@ function init() {
 
 window.onload = init;
 </script>
+
 <h1>Results for <em>''' + filename + ''' </em></h1>
-<!-- <br> <a href="''' + filename + '''.png"><img src="''' + filename + '''.png" width="100" /></a> -->
-<p>
-
-''' + bokehhtml + '''
-
+<p> ''' + bokehhtml + '''
 <a href="index.html">Records</a>: ''' + str(records) + '''
 <a href="authors.html">Authors</a>: ''' + str(authorcounter) + '''
 <a href="journals.html">Journals</a>: ''' + str(journalcounter) + '''
 <a href="cr.html">Cited References</a>: ''' + str(citrefcounter) + '''
 <a href="keywords.html">Original Keywords</a>: ''' + str(keywordcounter) + '''
 <br><a href="years.html">Yearly output (graph)</a> |
-<a href="''' + filename + '''Keywords.gexf">Keyword Co-occurrence Network (.gexf)</a> |
-<a href="''' + filename + '''Citations.gexf">Citation Network (Authors, Cited references) (.gexf)</a> |
-<!-- <a href="''' + filename + '''.png">Wordcloud of Keywords</a> -->
+<a href="''' + filename + '''
+Keywords.gexf">Keyword Co-occurrence Network (.gexf)</a> |
+<a href="''' + filename + '''
+Citations.gexf">Citation Network (Authors, Cited references) (.gexf)</a> |
 </p>
 '''
 
+# This top is specific to index.html
 indexbodytop = """
 <table id="result_table" class="sortable">
     <thead>
@@ -375,6 +389,7 @@ indexbodytop = """
     <tbody>
 """
 
+# This top is specific to cr.html
 crbodytop = """
 <table id="result_table" class="sortable">
     <thead>
@@ -391,7 +406,7 @@ crbodytop = """
     <tbody>
 """
 
-
+# This top is specific to authors.html
 authorbodytop = """
 <table id="result_table" class="sortable">
     <thead>
@@ -403,6 +418,7 @@ authorbodytop = """
     <tbody>
 """
 
+# This top is specific to journals.html
 journalbodytop = """
 <table id="result_table" class="sortable">
     <thead>
@@ -414,6 +430,7 @@ journalbodytop = """
     <tbody>
 """
 
+# This top is specific to keywords.html
 keywordbodytop = """
 <table id="result_table" class="sortable">
     <thead>
@@ -425,26 +442,30 @@ keywordbodytop = """
     <tbody>
 """
 
+# Write to files but keep them open.
 htmlfile.write(header + indexbodytop)
 crfile.write(header + crbodytop)
 authorfile.write(header + authorbodytop)
 journalfile.write(header + journalbodytop)
 keywordfile.write(header + keywordbodytop)
 
+
 """
 Write the content of the main table
 Note, arranged by most cited with the 'most_common' variable
 Change to increase/decrease the value.
-This should be rewritten in a future version
+This should be rewritten in a future version.
 """
 for record in dict(collections.Counter(indexbodydict).most_common(500)):
     htmlfile.write(record)
 
-""" This one used to print everything as index (without the limitation above).
-Makes computer run out of memory when using large data sets.
 """
-#for i in indexbody:
-#    htmlfile.write(i)
+This one could be used to write everything as index (without the
+limitation above). Makes computer run out of memory when using large data sets.
+
+for i in indexbody:
+    htmlfile.write(i)
+"""
 
 #Write html code to file
 for a in authorbody:
@@ -457,13 +478,17 @@ for k in keywordbody:
     keywordfile.write(k)
 
 
-# Create Cited referece (cr.html) table content. This a bit complicated.
+"""
+Create Cited Refere (CR) (cr.html) table content. This a bit complicated because
+the CR format is not very consistent, and DOI numbers are not very standardized.
+The loop reads from the 'cr' list, which is filled with cited references. It
+counts them and creates the list from 500 most frequent occurrences. To parse
+the CRs, they are split up and accessed as lists (within the list) and then
+tried (try:) for content. If data is lacking, it writes "N/A".
+"""
 crcount = collections.Counter(cr) #Count them
 for citedreference, count in crcount.most_common(500):
     crfile.write("<tr>\n")
-    #if len(citedreference) < 1:   #Needed because empty values screws the sorting up.
-    #    crfile.write("<td>Unknown</td>")
-    #else:
     crsplit = (citedreference.split(', '))
     try:
         if len(crsplit[0]) > 1:
@@ -481,8 +506,13 @@ for citedreference, count in crcount.most_common(500):
     except IndexError:
         crfile.write("<td>" + "N/A" + "</td>")
     try:
-        if crsplit[3].startswith("DOI"): #Very rarely the data starts wit DOI DOI. Another elif-statement may prevent this.
-            crfile.write('<td>N/A</td><td>N/A</td><td><a href="http://dx.doi.org/' + crsplit[3][4:] + '">' + crsplit[3][4:] + '</td>\n<td>' + str(count) + '</td></tr>\n')
+        """Very rarely the data starts with "DOI DOI".
+        Another elif-statement may prevent this."""
+        if crsplit[3].startswith("DOI"):
+            crfile.write('<td>N/A</td><td>N/A</td><td>'
+            + '<a href="http://dx.doi.org/'
+            + crsplit[3][4:] + '">' + crsplit[3][4:] + '</td>\n<td>'
+            + str(count) + '</td></tr>\n')
             continue
         else:
             crfile.write("<td>" + crsplit[3] + "</td>")
@@ -490,23 +520,23 @@ for citedreference, count in crcount.most_common(500):
         crfile.write("<td>" + "N/A" + "</td>")
     try:
         if crsplit[4].startswith("DOI"):
-            crfile.write('<td>N/A</td><td><a href="http://dx.doi.org/' + crsplit[4][4:] + '">' + crsplit[4][4:] + '</td>\n<td>' + str(count) + '</td></tr>\n')
+            crfile.write('<td>N/A</td><td><a href="http://dx.doi.org/'
+            + crsplit[4][4:] + '">' + crsplit[4][4:] + '</td>\n<td>'
+            + str(count) + '</td></tr>\n')
             continue
         else:
             crfile.write("<td>" + crsplit[4] + "</td>")
     except IndexError:
        crfile.write("<td>" + "N/A" + "</td>")
     try:
-       crfile.write('<td><a href="http://dx.doi.org/' + crsplit[5][4:] + '">' + crsplit[5][4:] + '</td>')
+       crfile.write('<td><a href="http://dx.doi.org/'
+       + crsplit[5][4:] + '">' + crsplit[5][4:] + '</td>')
     except IndexError:
        crfile.write("<td>" + "N/A" + "</td>")
     crfile.write("<td>" + str(count) + "</td>")
     crfile.write("</tr>\n")
 
-
-
-
-### Print the footer and close the files
+#Define a footer
 footer = """
     </tbody>
 </table>
@@ -516,7 +546,8 @@ footer = """
 </body>
 </html>
 """
-#Write and save files
+
+#Write footer and save files
 htmlfile.write(footer)
 htmlfile.close()
 crfile.write(footer)
@@ -528,10 +559,7 @@ journalfile.close()
 keywordfile.write(footer)
 keywordfile.close()
 
-
-### Boot up web server
-#import webbrowser
-#webbrowser.open('http://localhost:8000/index.html')
+# Boot up web server
 import http.server
 import socketserver
 

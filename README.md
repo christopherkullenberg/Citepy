@@ -14,7 +14,9 @@ Features include:
 * Easy-to-share output (a few static html files).
 
 
-<img src="screenshot.png" width="500"/>
+<a href="http://scientometrics.flov.gu.se/Citepy/"><img src="screenshot.png" width="500"/></a>
+
+For a live demo, please visit [this page](http://scientometrics.flov.gu.se/Citepy/).
 
 ### Requirements
 This program is written in Python 3. The following external packages are required:
