@@ -7,13 +7,14 @@ This is a very early draft of a program. Use more as food for though rather than
 as a production tool. Please excuse the lengthy code. I am only a beginner
 programmer :)
 """
+
 import pandas as pd
 from bokeh.plotting import figure, output_file, save
 from bokeh.embed import file_html
 from bokeh.resources import CDN
 import collections
 from sys import argv
-from gexf import *
+from gexf import Gexf
 from itertools import combinations
 import numpy as np
 # import matplotlib.pyplot as plt # Not used right now
